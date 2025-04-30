@@ -5,7 +5,7 @@ from database.connection import Base
 class Projects(Base):
     __tablename__: str = "projects"
 
-    id: Mapped[int] = mapped_column(Integer)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String)
     completed: Mapped[bool] = mapped_column(Boolean)
 
