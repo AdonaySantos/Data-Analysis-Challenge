@@ -1,8 +1,14 @@
 from typing import TypedDict
-from models.project import Project
+from models.project import Project, ProjectDict
+from pydantic import BaseModel
 
-class Team(TypedDict):
+class TeamDict(TypedDict):
     nome: str
     lider: bool
-    projetcts: list[Project]
+    projetos: list[ProjectDict]
+
+class Team(BaseModel):
+    nome: str
+    lider: bool
+    projetos: list[Project]
 

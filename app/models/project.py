@@ -1,5 +1,10 @@
 from typing import TypedDict
+from pydantic import BaseModel
 
-class Project(TypedDict):
-    name: str
-    concluded: bool
+class ProjectDict(TypedDict):
+    nome: str
+    concluida: bool
+
+class Project(BaseModel):
+    nome: str
+    concluida: bool
