@@ -1,14 +1,16 @@
 from contextlib import asynccontextmanager
-import os, signal
+import os
+import signal
 
-from pymongo.cursor import Collection
+from fastapi.responses import JSONResponse
 
 from database.mongo import get_user_collection
 from database.db_config import create_tables
 from fastapi import FastAPI
 
-from models.user import User, UserDict
-from schemas.user import list_users
+from models.user import User
+from services.user_services import get_all_superusers, get_all_top_countries
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -21,18 +23,50 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+
+@app.exception_handler(Exception)
+async def exception_handler(exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"error": exc}
+    )
+
+
 @app.post("/users")
 def post_users(users: list[User]):
-    users_collection = get_user_collection()
-    _ = users_collection.insert_many(users)
+    try:
+        users_collection = get_user_collection()
+        documents = [user.model_dump(by_alias=True) for user in users]
+        _ = users_collection.insert_many(documents)
+    except Exception as e:
+        return {"error": f"Error while insert: {e}"}
     return {"message": f"{len(users)} users inserted into MongoDB"}
 
+
+@app.delete("/delete-all")
+def delete_all():
+    try:
+        collection = get_user_collection()
+        _ = collection.delete_many({})
+    except Exception as e:
+        return {"error": f"Error deleting all: {e}"}
+    return {"message": "All users deleted"}
+
+
 @app.get("/superusers")
-def get_superusers() -> dict[str, list[UserDict] | int]:
-    collection: Collection[UserDict] = get_user_collection()
-    superusers_cursor = collection.find({"score": { "$gte": 900}, "ativo": True})
-    superusers = list_users(superusers_cursor)
-    return {"superusers": superusers, "number of superusers": len(superusers)}
+def get_superusers():
+    sups = get_all_superusers()
+    return {
+        "superusers": sups,
+        "number of superusers": len(sups) if isinstance(sups, list) else 0
+    }
+
+
+@app.get("/top-countries")
+def get_users_by_country() -> list[dict[str, str | int]]:
+    top_countries = get_all_top_countries()
+    return top_countries if top_countries else [{}]
+
 
 @app.get("/")
 def hello():
