@@ -6,10 +6,10 @@ from fastapi.responses import JSONResponse
 
 from database.mongo import get_user_collection
 from database.db_config import create_tables
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 
 from models.user import User
-from services.user_services import get_all_superusers, get_all_top_countries
+from services.user_services import get_all_superusers, get_all_top_countries, get_team_insights
 
 
 @asynccontextmanager
@@ -25,10 +25,10 @@ app = FastAPI(lifespan=lifespan)
 
 
 @app.exception_handler(Exception)
-async def exception_handler(exc: Exception):
+async def exception_handler(_: Request, exc: Exception):
     return JSONResponse(
         status_code=500,
-        content={"error": exc}
+        content={"error": exc},
     )
 
 
@@ -66,6 +66,12 @@ def get_superusers():
 def get_users_by_country() -> list[dict[str, str | int]]:
     top_countries = get_all_top_countries()
     return top_countries if top_countries else [{}]
+
+
+@app.get("/team-insights")
+def get_all_insights() -> list[dict[str, str | int]]:
+    team_insights = get_team_insights()
+    return team_insights
 
 
 @app.get("/")
